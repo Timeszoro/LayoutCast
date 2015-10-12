@@ -44,7 +44,10 @@ public class LayoutCast {
 			if (vmVersion != null && vmVersion.startsWith("2")) {
 				ArtUtils.overrideClassLoader(app.getClassLoader(), f, opt);
 			} else {
-				Log.e("lcast", "cannot cast dex to daivik, only support ART now.");
+				File dvmF = new File(dir,"classes.dex");
+				f.renameTo(dvmF);
+				ArtUtils.hookMehtods(app, dvmF, opt);
+//				Log.e("lcast", "cannot cast dex to daivik, only support ART now.");
 			}
 		}
 
