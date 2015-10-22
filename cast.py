@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 __author__ = 'mmin18'
-__version__ = '2.51019'
+__version__ = '2.51022'
 __plugin__ = '1'
 
 from subprocess import Popen, PIPE, check_call
@@ -174,7 +174,10 @@ def package_name(dir):
         return pn
 
 def get_apk_path(dir):
-    apkpath = os.path.join(dir,'build','outputs','apk')
+    if not is_gradle_project(dir):
+        apkpath = os.path.join(dir,'bin')
+    else:
+        apkpath = os.path.join(dir,'build','outputs','apk')
     #Get the lastmodified *.apk file
     maxt = 0
     maxd = None
@@ -387,7 +390,6 @@ def list_aar_projects(dir, deps):
             list2.append(ppath)
     return list2
 
-
 def get_android_jar(path):
     if not os.path.isdir(path):
         return None
@@ -395,23 +397,17 @@ def get_android_jar(path):
     if not os.path.isdir(platforms):
         return None
     api = 0
-    api_low = 0
-    api_path = None
-    api_path_low = None
-    result = []
+    result = None
     for pd in os.listdir(platforms):
         pd = os.path.join(platforms, pd)
         if os.path.isdir(pd) and os.path.isfile(os.path.join(pd, 'source.properties')) and os.path.isfile(os.path.join(pd, 'android.jar')):
             s = open_as_text(os.path.join(pd, 'source.properties'))
             m = re.search(r'^AndroidVersion.ApiLevel\s*[=:]\s*(.*)$', s, re.MULTILINE)
-            if m :
+            if m:
                 a = int(m.group(1))
-                if a >= 23 and a > api :
-                    api_path = os.path.join(pd, 'android.jar')
-                if a < 23 and a > api_low:
-                    api_path_low = os.path.join(pd, 'android.jar')
-    result.append(api_path)
-    result.append(api_path_low)
+                if a > api:
+                    api = a
+                    result = os.path.join(pd, 'android.jar')
     return result
 
 def get_adb(path):
@@ -421,7 +417,7 @@ def get_adb(path):
 
 def get_aapt(path):
     execname = os.name=='nt' and 'aapt.exe' or 'aapt'
-    if path and os.path.isdir(path) and os.path.isdir(os.path.join(path, 'build-tools')):
+    if os.path.isdir(path) and os.path.isdir(os.path.join(path, 'build-tools')):
         btpath = os.path.join(path, 'build-tools')
         minv = LooseVersion('0')
         minp = None
@@ -663,6 +659,7 @@ if __name__ == "__main__":
         exit(5)
 
     is_gradle = is_gradle_project(dir)
+
     android_jar = get_android_jar(sdkdir)
     if not android_jar:
         print('android.jar not found !!!\nUse local.properties or set ANDROID_HOME env')
@@ -782,10 +779,8 @@ if __name__ == "__main__":
             aaptargs.append(assets_path)
         aaptargs.append('-M')
         aaptargs.append(manifestpath(dir))
-        for jar in android_jar:
-            aaptargs.append('-I')
-            aaptargs.append(jar)
-        print aaptargs
+        aaptargs.append('-I')
+        aaptargs.append(android_jar)
         cexec(aaptargs,exitcode=18)
 
         with open(os.path.join(bindir, 'res.zip'), 'rb') as fp:
@@ -805,8 +800,7 @@ if __name__ == "__main__":
 
             launcher = curl('http://127.0.0.1:%d/launcher'%port,exitcode = 13)
 
-            classpath = [];
-            classpath.extend(android_jar)
+            classpath = [android_jar]
             for dep in adeps:
                 dlib = libdir(dep)
                 if dlib:
