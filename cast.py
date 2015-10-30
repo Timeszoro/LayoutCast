@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 __author__ = 'mmin18'
-__version__ = '2.51024'
+__version__ = '2.51025'
 __plugin__ = '1'
 
 from subprocess import Popen, PIPE, check_call
@@ -137,7 +137,7 @@ def __deps_list_gradle(list, project):
     par = os.path.abspath(os.path.join(project, os.pardir))
     if os.path.isfile(os.path.join(par, 'settings.gradle')):
         data = open_as_text(os.path.join(par, 'settings.gradle'))
-        for proj in re.findall(r'project\(\'\:(.+)\'\).+new File\(settingsDir,\s\'(.+)\'\)',data):
+        for proj in re.findall(r'''project\(\'\:(.+)\'\)\.projectDir\s*\=\s*new\s*File\(.*['"](.+)['"]\)''',data):
             ex_libs[proj[0]] = proj[1]
     deptmp = []
     for dep in ideps:
