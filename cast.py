@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 __author__ = 'mmin18'
-__version__ = '2.51102'
+__version__ = '2.51110'
 __plugin__ = '1'
 
 from subprocess import Popen, PIPE, check_call
@@ -153,6 +153,7 @@ def __deps_list_gradle(list, project):
         b = True
         deps = []
         for idep in ideps:
+            pathtmp = path
             for par in  re.findall(r'.*(\.\.\/).+',idep):
                 pathtmp = os.path.abspath(os.path.join(path, os.path.pardir))
             idep = idep.replace('../','')
@@ -790,6 +791,7 @@ if __name__ == "__main__":
 
         #Get the assets path
         apk_path = get_apk_path(dir)
+        assets_path = None
         if apk_path:
             assets_path = os.path.join(bindir,"assets")
             if os.path.isdir(assets_path):
@@ -818,7 +820,7 @@ if __name__ == "__main__":
         for assetdir in assetdirs:
             aaptargs.append('-A')
             aaptargs.append(assetdir)
-        if os.path.isdir(assets_path):
+        if assets_path and os.path.isdir(assets_path):
             aaptargs.append('-A')
             aaptargs.append(assets_path)
         aaptargs.append('-M')
@@ -836,9 +838,7 @@ if __name__ == "__main__":
         vmversion = curl('http://127.0.0.1:%d/vmversion'%port, ignoreError=True)
         if vmversion==None:
             vmversion = ''
-        if vmversion.startswith('1'):
-            print('cast dex to dalvik vm is not supported, you need ART in Android 5.0')
-        elif vmversion.startswith('2'):
+        if vmversion.startswith('1') or vmversion.startswith('2'):
             javac = get_javac(jdkdir)
             if not javac:
                 print('javac is required to compile java code, config your PATH to include javac')
