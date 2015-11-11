@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 __author__ = 'mmin18'
-__version__ = '2.51110'
+__version__ = '2.51111'
 __plugin__ = '1'
 
 from subprocess import Popen, PIPE, check_call
@@ -420,6 +420,7 @@ def get_android_jar(path):
         return None
     api = 0
     result = []
+    max_pd = None
     for pd in os.listdir(platforms):
         pd = os.path.join(platforms, pd)
         if os.path.isdir(pd) and os.path.isfile(os.path.join(pd, 'source.properties')) and os.path.isfile(os.path.join(pd, 'android.jar')):
@@ -429,7 +430,9 @@ def get_android_jar(path):
                 a = int(m.group(1))
                 if a > api:
                     api = a
-                    result.append(os.path.join(pd, 'android.jar'))
+                    max_pd = pd
+    result.append(os.path.join(max_pd, 'android.jar'))
+
     api = 0
     for pd in os.listdir(platforms):
         pd = os.path.join(platforms, pd)
@@ -440,7 +443,9 @@ def get_android_jar(path):
                 a = int(m.group(1))
                 if a > api and a < 23:
                     api = a
-                    result.append(os.path.join(pd, 'android.jar'))              
+                    max_pd = pd
+    result.append(os.path.join(max_pd, 'android.jar'))  
+    print result
     return result
 
 def get_adb(path):
