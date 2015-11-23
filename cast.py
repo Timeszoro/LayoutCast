@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 __author__ = 'mmin18'
-__version__ = '2.51111'
+__version__ = '2.51122'
 __plugin__ = '1'
 
 from subprocess import Popen, PIPE, check_call
@@ -130,44 +130,58 @@ def __deps_list_gradle(list, project):
         depends = balanced_braces(str[m.start():])
         for proj in re.findall(r'''compile\s+project\s*\(.*['"]:(.+)['"].*\)''', depends):
             ideps.append(proj.replace(':', os.path.sep))
-    if len(ideps) == 0:
-        return
-    #get the real path
-    ex_libs = {}
-    par = os.path.abspath(os.path.join(project, os.pardir))
-    if os.path.isfile(os.path.join(par, 'settings.gradle')):
-        data = open_as_text(os.path.join(par, 'settings.gradle'))
-        for proj in re.findall(r'''project\(\'\:(.+)\'\)\.projectDir\s*\=\s*new\s*File\(.*['"](.+)['"]\)''',data):
-            ex_libs[proj[0]] = proj[1]
-    deptmp = []
-    for dep in ideps:
-        if dep in ex_libs:
-            deptmp.append(ex_libs[dep])
-        else:
-            deptmp.append(dep)
-    ideps = deptmp
-    path = project
-    for i in range(1, 3):
-        path = os.path.abspath(os.path.join(path, os.path.pardir))
-        pathtmp = path
-        b = True
-        deps = []
-        for idep in ideps:
+
+
+    #get modulelist
+    use_module_list = False
+    projectPath = os.path.abspath(os.path.join(project, os.pardir))
+    print projectPath
+    if os.path.isfile(os.path.join(projectPath,'modulelist')):
+        use_module_list = True
+        f = open(os.path.join(projectPath,'modulelist'))
+        for line in f.readlines():
+            line = line.strip()
+            par = os.path.abspath(os.path.join(projectPath, os.path.pardir))
+            if os.path.isdir(os.path.join(par,line)):
+                list.append(os.path.join(par,line))
+    if not use_module_list:
+        #get the real path
+        ex_libs = {}
+        par = os.path.abspath(os.path.join(project, os.pardir))
+        if os.path.isfile(os.path.join(par, 'settings.gradle')):
+            data = open_as_text(os.path.join(par, 'settings.gradle'))
+            for proj in re.findall(r'''project\(\'\:(.+)\'\)\.projectDir\s*\=\s*new\s*File\(.*['"](.+)['"]\)''',data):
+                ex_libs[proj[0]] = proj[1]
+        deptmp = []
+        for dep in ideps:
+            if dep in ex_libs:
+                deptmp.append(ex_libs[dep])
+            else:
+                deptmp.append(dep)
+        ideps = deptmp
+        path = project
+        for i in range(1, 3):
+            path = os.path.abspath(os.path.join(path, os.path.pardir))
             pathtmp = path
-            for par in  re.findall(r'.*(\.\.\/).+',idep):
-                pathtmp = os.path.abspath(os.path.join(path, os.path.pardir))
-            idep = idep.replace('../','')
-            dep = os.path.join(pathtmp, idep)
-            if not os.path.isdir(dep):
-                b = False
+            b = True
+            deps = []
+            for idep in ideps:
+                pathtmp = path
+                for par in  re.findall(r'.*(\.\.\/).+',idep):
+                    pathtmp = os.path.abspath(os.path.join(path, os.path.pardir))
+                idep = idep.replace('../','')
+                dep = os.path.join(pathtmp, idep)
+                if not os.path.isdir(dep):
+                    b = False
+                    break
+                deps.append(dep)
+            if b:
+                for dep in deps:
+                    __deps_list_gradle(list, dep)
+                    if not dep in list:
+                        list.append(dep)
                 break
-            deps.append(dep)
-        if b:
-            for dep in deps:
-                __deps_list_gradle(list, dep)
-                if not dep in list:
-                    list.append(dep)
-            break
+
 
 def deps_list(dir):
     if is_gradle_project(dir):
@@ -445,7 +459,6 @@ def get_android_jar(path):
                     api = a
                     max_pd = pd
     result.append(os.path.join(max_pd, 'android.jar'))  
-    print result
     return result
 
 def get_adb(path):
