@@ -399,21 +399,23 @@ def list_aar_projects(dir, deps):
     pnlist = [package_name(i) for i in deps]
     pnlist.append(package_name(dir))
     list1 = []
-    if os.path.isdir(os.path.join(dir, 'build', 'intermediates', 'incremental', 'mergeResources')):
-        for dirpath, dirnames, files in os.walk(os.path.join(dir, 'build', 'intermediates', 'incremental', 'mergeResources')):
-            if re.findall(r'[/\\+]androidTest[/\\+]', dirpath):
-                continue
-            for fn in files:
-                if fn=='merger.xml':
-                    data = open_as_text(os.path.join(dirpath, fn))
-                    for s in re.findall(r'''path="([^"]+)"''', data):
-                        (parent, child) = os.path.split(s)
-                        if child.endswith('.xml') or child.endswith('.png') or child.endswith('.jpg'):
-                            (parent, child) = os.path.split(parent)
-                            if isResName(child) and not parent in list1:
-                                list1.append(parent)
-                        elif os.path.isdir(s) and not s in list1 and countResDir(s) > 0:
-                            list1.append(s)
+    incremental_path =  os.path.join(dir, 'build', 'intermediates', 'incremental')
+    for f in os.listdir(incremental_path):
+         if f.startswith("mergeResources") and os.path.isdir(os.path.join(incremental_path,f)):
+            for dirpath, dirnames, files in os.walk(os.path.join(incremental_path,f)):
+                if re.findall(r'[/\\+]androidTest[/\\+]', dirpath):
+                    continue
+                for fn in files:
+                    if fn=='merger.xml':
+                        data = open_as_text(os.path.join(dirpath, fn))
+                        for s in re.findall(r'''path="([^"]+)"''', data):
+                            (parent, child) = os.path.split(s)
+                            if child.endswith('.xml') or child.endswith('.png') or child.endswith('.jpg'):
+                                (parent, child) = os.path.split(parent)
+                                if isResName(child) and not parent in list1:
+                                    list1.append(parent)
+                            elif os.path.isdir(s) and not s in list1 and countResDir(s) > 0:
+                                list1.append(s)
     # if os.path.isdir(os.path.join(dir, 'build', 'intermediates', 'exploded-aar')):
     #     for dirpath, dirnames, files in os.walk(os.path.join(dir, 'build', 'intermediates', 'exploded-aar')):
     #         if 'res' in dirnames:
