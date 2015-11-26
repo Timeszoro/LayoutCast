@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 __author__ = 'mmin18'
-__version__ = '2.51122'
+__version__ = '2.51126'
 __plugin__ = '1'
 
 from subprocess import Popen, PIPE, check_call
